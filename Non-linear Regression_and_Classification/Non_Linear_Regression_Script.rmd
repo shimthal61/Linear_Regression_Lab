@@ -1,0 +1,50 @@
+---
+output: reprex::reprex_document
+knit: reprex::reprex_render
+---
+
+# Non-Linear Regression
+
+Let's first read in our data for this lab and attach the `Wage` data
+
+```{r}
+library(ISLR2)
+attach(Wage)
+```
+
+## Polynomial Regression
+
+Let's first fit our model using a fourth-degree Polynomial  in `age`
+
+```{r}
+poly_fit <- lm(wage ~ poly(age, 4), data = Wage)
+coef(summary(poly))
+```
+
+The model above returns a matrix whose columns are a basis of orthologonal polynomials, which essentially means that each column is a linear combination of the variables `age`, `age^2`, `age^3`, and `age^4`.
+
+We can instead using the `raw = T` argument to directly obtain each `age` polynomials
+
+```{r}
+poly2_fit <- lm(wage ~ poly(age, 4, raw = TRUE), data = Wage)
+coef(summary(poly2))
+```
+
+We can create a similar model using the `cbind()` function for building a matric from a collection of vectors.
+
+Let's now create a grid of values for `age` at which we want predictions, and then call then generic `predict()` function, specifying that we want standard error as well
+
+```{r}
+agelims <- range(age)
+age_grid <- seq(from = agelims[1], to = agelims[2])
+preds <- predict(poly_fit, newdata = list(age = age_grid),
+    se = TRUE)
+se_bands <- cbind(preds$poly_fit + 2 * preds$se.poly_fit,
+    preds$poly_fit - 2 * preds$se.poly_fit)
+```
+
+Finally, we plot the data and add the fit from the degree-4 polynomial.
+
+```{r}
+
+```
