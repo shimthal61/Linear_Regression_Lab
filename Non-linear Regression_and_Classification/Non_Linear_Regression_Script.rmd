@@ -18,7 +18,7 @@ Let's first fit our model using a fourth-degree Polynomial  in `age`
 
 ```{r}
 poly_fit <- lm(wage ~ poly(age, 4), data = Wage)
-coef(summary(poly))
+coef(summary(poly_fit))
 ```
 
 The model above returns a matrix whose columns are a basis of orthologonal polynomials, which essentially means that each column is a linear combination of the variables `age`, `age^2`, `age^3`, and `age^4`.
@@ -27,7 +27,7 @@ We can instead using the `raw = T` argument to directly obtain each `age` polyno
 
 ```{r}
 poly2_fit <- lm(wage ~ poly(age, 4, raw = TRUE), data = Wage)
-coef(summary(poly2))
+coef(summary(poly2_fit))
 ```
 
 We can create a similar model using the `cbind()` function for building a matric from a collection of vectors.
@@ -35,16 +35,68 @@ We can create a similar model using the `cbind()` function for building a matric
 Let's now create a grid of values for `age` at which we want predictions, and then call then generic `predict()` function, specifying that we want standard error as well
 
 ```{r}
-agelims <- range(age)
-age_grid <- seq(from = agelims[1], to = agelims[2])
+agelims <- range(age) # Create a vector with the min and max ages
+age_grid <- seq(from = agelims[1], to = agelims[2]) # Creates a vector which contains all the values from the first index of age to the last index
 preds <- predict(poly_fit, newdata = list(age = age_grid),
     se = TRUE)
-se_bands <- cbind(preds$poly_fit + 2 * preds$se.poly_fit,
-    preds$poly_fit - 2 * preds$se.poly_fit)
+se_bands <- cbind(preds$fit + 2 * preds$se.fit,
+    preds$fit - 2 * preds$se.fit)
 ```
 
 Finally, we plot the data and add the fit from the degree-4 polynomial.
 
 ```{r}
-
+par(mfrow = c(1, 2), mar = c(4.5, 4.5, 1, 1),
+    oma = c(0, 0, 4, 0)) # Set the physical margins and parameters of the plot
+plot(age, wage, xlim = agelims, cex = .5, col = "darkgrey") # Create the plot using the vectors we created earlier
+title("Degree-4 Polynomial", outer = TRUE) # Set the title and location
+lines(age_grid, preds$fit, lwd = 2, col = "blue") # Create the fit line from the 4th degree polynomial
+matlines(age_grid, se_bands, lwd = 1, col = "blue", lty = 3) # Add in the standard error line
 ```
+
+We can also see whether using an orthogonal set of basic functions will affect our model in a meaningful way
+
+```{r}
+pred2 <- predict(poly2_fit, newdata = list(age = age_grid),
+    se = TRUE)
+max(abs(preds$fit - pred2$fit))
+```
+
+## What degree Polynomial
+
+When performing polynomial Regression we must decide on the degree of the polynomial to use. We can use a null-hypothesis test to determine the simpliest model to explain the relationship between `wage` and `age`.
+
+```{r}
+for (i in 1:5) { # We first create a for loop with i having a value 1 to 5
+    nam <- paste("fit_", i, sep = "") # We create a new variable called fit_i
+    assign(nam, lm(wage ~ poly(age, i), data = Wage)) # We carry out a polynomial fit of i and assign it to fit_i
+}
+anova(fit_1, fit_2, fit_3, fit_4, fit_5) # We run an anova to test the null hypothesis]
+```
+
+The *p*-values comparing the linear model to the quadratic model is essentially zero, indicating that the linear fit it not sufficient. 
+
+Continuing this logic, it appears as though a cubic or quadratic polynomial appears to provide the most reasonable fit to the data. 
+
+Instead of using the `anova()` function, we could have obtained these p-values more succinctly by exploting the fact that `poly()` creates orthogonal polynomials.
+
+```{r}
+coef(summary(fit_5))
+```
+
+Notice how the *p*-values are the same, with the *t*-statistic equal to the F-statistic from the `anova()`. 
+
+The ANOVA method also works when we have more terms in our model
+
+```{r}
+for (i in 1:5) {
+    nam <- paste("fit_", i, sep = "")
+    assign(nam, lm(wage ~ education + poly(age, i), data = Wage))
+}
+anova(fit_1, fit_2, fit_3, fit_4, fit_5)
+```
+
+# Step functions
+
+In order to fit a step function, we use the `cut()` function
+
