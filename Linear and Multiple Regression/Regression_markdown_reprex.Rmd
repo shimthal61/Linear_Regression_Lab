@@ -1,3 +1,16 @@
+```{r reprex-options, include = FALSE}
+options(
+  keep.source = TRUE,
+  rlang_backtrace_on_error_report = "full",
+  crayon.enabled = FALSE,
+  reprex.current_venue = "gh"
+)
+```
+
+```{r, results = 'asis', echo = FALSE, include = file.exists('.Rprofile'), eval = file.exists('.Rprofile')}
+cat(sprintf("*Local `.Rprofile` detected at `%s`*", normalizePath(".Rprofile")))
+```
+
 ---
 output: reprex::reprex_document
 knit: reprex::reprex_render
@@ -235,3 +248,5 @@ The `contrasts()` function returns the coding the `R` uses the for dummy variabl
 attach(Carseats)
 contrasts(ShelveLoc)
 ```
+
+<sup>Created on `r Sys.Date()` with [reprex v`r utils::packageVersion("reprex")`](https://reprex.tidyverse.org)</sup>
