@@ -24,4 +24,148 @@ pairs(Smarket)
 cor(Smarket[, -9])
 ```
 
-The `corr()` function creates a matrix of a
+We can see that the correlations between `lag` variables and `Today` returns are close to zero,
+In other words, there appears to be little correlation between today's returns and the previous days' returns.
+The only substantial correlation is between `year` and `volume`.
+
+By plotting the data, we see that `volume` is increasing over time. In other words, the average number of shares traded daily increased from 2001 to 2005
+
+```{r}
+attach(Smarket)
+plot(Volume)
+```
+
+# Logisitic Regression
+
+Next, we will fit a logisitic regression model to predict `direction` using `lagone`.
+
+The `glm()` can be used to fit many types of generalised linear models. 
+The syntax is similar to `lm()` except that we must specify that the family is binomial.
+
+```{r}
+log_fit <- glm(Direction ~ . - Year - Direction - Today,
+               data = Smarket, family = binomial)
+summary(log_fit)
+```
+
+The smallest *p*- value here is `Lag1`. The negative coefficient suggests that if the market had a positive return yesterday, then is it less likely to go up today.
+However, the *p*-value is still not significant, so there is no clear evidence for a real assocaition between `lag1` and `direction`.
+
+We can use the `coef()` function to retrieve the coefficients for this model.
+
+```{r}
+coef(log_fit)
+```
+
+Alternatively we can access it using `$`.
+
+```{r}
+summary(log_fit)$coef[, 4]
+```
+
+The `predict()` function can be used to predict the probability that the market will go up, using our predictors. 
+
+```{r}
+log_prob <- predict(log_fit, type = "response")
+log_prob[1:10]
+```
+
+We know that the above values correspond to the probability of the market going up, since the `contrasts` function tells us how the levels have been dummy coded
+
+```{r}
+contrasts(Direction)
+```
+
+In order to make a prediction as to whether the market will go up or down, we must convert these predicted probabilites to class labels: `Up` or `Down`. 
+The following commands create a vector of class predictions based on the predicted probability of a market increase is greater or less than 0.5
+
+```{r}
+log_pred <- rep("Down", 1250)
+log_pred[log_prob > .5] <- "Up"
+```
+
+The first command creates a vector of 1250 `Down` elements. The second line transforms to `Up` all of the elements which the predicted proability of a market increase exceeds 0.5
+
+Given these predictions, the `table()` function can be used to produce a confusion matrix in order to determine how many observations were correctly or incorrectly classificed
+
+By inputting two qualitative vectors, `R` will create a 2x2 table with counts of the number of times each combincation occured.
+
+```{r}
+confusion <- table(log_pred, Direction)
+confusion <- as.data.frame(confusion) # Converted the table to a df
+sum((confusion$Freq[1] + confusion$Freq[4]) / sum(confusion$Freq)) # Work out the sum of correctly predicted
+```
+
+In this case, the Logisitic regression correctly predicted the movement of the market 52.2% of the times.
+
+At first glance, it appears as though our logistic regression model is working a little better than chance. 
+However, this is misleading since we trained and tested the model on the same set of observations. 
+The training error rate is often overly optimistic - it tends to underestimate the test error rate.
+In order to better assess the accuracy of the model, we can fut the model using part of the data, and then examine how well it predicts the held out data.
+This will yield a more realistic error rate.
+
+To impliment this strategy, we first create a vector corresponding to the observation from 2001 though 2004. We will then use this vector to create a held out data set of observations from 2005
+
+```{r}
+train <- (Year < 2005)
+smarket_05 <- Smarket[!train, ]
+dim(Smarket_05)
+```
+
+```{r}
+direction_05 <- Direction[!train]
+```
+
+The object `train` is a vector containing all the observations, with boolean variables corresponding to the years. All observations before 2005 are `TRUE`, and all in 2005 are `FALSE`. The `!` symbol reverses all the boolean elements. We now fit a logistic regression model using only the subset of the observations that correspond to dates before 2005. We then obtain predicted probabilities of the stock market going up for each day in our test data
+
+```{r}
+log_fit <- glm(Direction ~ . - Year - Today - Direction,
+               data = Smarket, family = binomial, subset = train)
+```
+
+Now that we've trained our data, we can test it on a our test data set
+
+```{r}
+log_probs <- predict(log_fit, smarket_05, type = "response")
+```
+
+Finally, we compute the predictions for 2005 and compare them to the actual movements of the market over that time period
+
+```{r}
+log_pred <- rep("Down", 252)
+log_pred[log_probs > .5] <- "Up"
+table(log_pred, direction_05)
+```
+
+```{r}
+mean(log_pred == direction_05) # Computes the error rate
+mean(log_pred != direction_05) # Computes the test set error rate
+```
+
+The test error rate is 51.98%, worse than guessing at chance! We recall that the original logistic regression model had pretty large *p*-values associated with the predictor variables. Perhaps by removing the variables that appear not to be helpful in predicting `direction`, we can obtain a more effective model, since these variables might be adding to the error rate. 
+
+```{r}
+summary(log_fit) # Have another look at the p-values
+```
+
+Below, we refit the logistic regression using just `lagone` and `lagtwo`, which seemed to have the largest predictive power in the original logistic regression model. 
+
+```{r}
+log_fit <- glm(Direction ~ Lag1 + Lag2, data = Smarket,
+                family = binomial, subset = train)
+log_probs <- predict(log_fit, smarket_05, type = "response")
+log_pred <- rep("Down", 252)
+log_pred[log_probs > .5] <- "Up"
+table(log_pred, direction_05)
+mean(log_pred == direction_05)
+```
+
+This is a little better - 56% of the daily movements have now been correctly predicted. Suppose that we want to predict the returns associated with particular values of `lagone` and `lagtwo`. In particular, we want to predict `direction` on a day when `lagone` and lagtwo` equal 1.2 and 1.1 respectively, and we a day when they equal 1.5 and 0.8. We do this using the `predict()` function
+
+```{r}
+predict(log_fit, newdata = data.frame(Lag1 = c(1.2, 1.5), Lag2 = c(1.1, -0.8)),
+            type = "response")
+```
+
+# Linear Disciminant Analysis
+

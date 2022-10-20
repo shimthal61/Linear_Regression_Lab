@@ -1,0 +1,44 @@
+```{r reprex-options, include = FALSE}
+options(
+  keep.source = TRUE,
+  rlang_backtrace_on_error_report = "full",
+  crayon.enabled = FALSE,
+  reprex.current_venue = "gh"
+)
+```
+
+```{r, results = 'asis', echo = FALSE, include = file.exists('.Rprofile'), eval = file.exists('.Rprofile')}
+cat(sprintf("*Local `.Rprofile` detected at `%s`*", normalizePath(".Rprofile")))
+```
+
+---
+output: reprex::reprex_document
+knit: reprex::reprex_render
+---
+
+First, we load in and attach our our dataset
+
+```{r}
+library(ISLR2)
+names(Smarket)
+```
+
+```{r}
+dim(Smarket) # View the number of rows and columns
+```
+
+We can use the `pairs()` function to create a scatterplot matrix of all the variables.
+
+The `cor()` function produces a matrix of all the pairwise correlations among the predictors.
+We have to omit `direction` as it is a qualitative predictor
+
+```{r}
+pairs(Smarket)
+cor(Smarket[, -9])
+```
+
+We can see that the correlations between `lag` variables and `Today` returns are close to zero,
+In other words, there appears to be little correlation between today's returns and the previous days' returns.
+The only substantial correlation is between `year` and `volume`.
+
+<sup>Created on `r Sys.Date()` with [reprex v`r utils::packageVersion("reprex")`](https://reprex.tidyverse.org)</sup>
