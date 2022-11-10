@@ -1,6 +1,12 @@
 ---
-output: reprex::reprex_document
-knit: reprex::reprex_render
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    font:family: Lato
+  pdf_document:
+    toc: yes
 ---
 
 First, we load in and attach our our dataset
@@ -109,7 +115,7 @@ To impliment this strategy, we first create a vector corresponding to the observ
 ```{r}
 train <- (Year < 2005)
 smarket_05 <- Smarket[!train, ]
-dim(Smarket_05)
+dim(smarket_05)
 ```
 
 ```{r}
