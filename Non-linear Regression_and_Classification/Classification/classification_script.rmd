@@ -1,4 +1,5 @@
 ---
+title: "Classification"
 output:
   html_document:
     theme: flatly
@@ -9,7 +10,7 @@ output:
     toc: yes
 ---
 
-First, we load in and attach our our dataset
+First, we load in and attach our dataset
 
 ```{r}
 library(ISLR2)
