@@ -1,6 +1,6 @@
 ---
-output: reprex::reprex_document
-knit: reprex::reprex_render
+title: "Regression"
+output: html_document
 ---
 
 # Libraries
@@ -19,7 +19,8 @@ head(Boston)
 ```
 
 Output variable:
-- medv - medium house value. Our predictor variable
+
+- Medv: medium house value. Our predictor variable
 
 Input variables:
 - rmvar - average number of rooms per house
