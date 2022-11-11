@@ -176,3 +176,58 @@ predict(log_fit, newdata = data.frame(Lag1 = c(1.2, 1.5), Lag2 = c(1.1, -0.8)),
 
 # Linear Disciminant Analysis
 
+We will now perform LDA on the `Smarket` data. We can fit an LDA mode using the `lda()` function, which is part of the `MASS` library. The syntax is identical, to `lm`, except we omit the `family` argument. We'll fit the model using our training data created before.
+
+```{r}
+library(MASS)
+lda_fit <- lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+lda_fit
+```
+
+```{r}
+lda_fit$prior
+```
+
+The output from `lda_fit` indicates that the prior probability the market went down was 49.2%, and the probability that it went up was 50.8%.
+
+```{r}
+lda_fit$means
+```
+
+It also provides the group means - these are the averages of each predictor within each class. These suggests that there is a tendency for the previous 2 day's returns to be negative on days when the market increases, and a tendency for the previous days' returns to be positive on days when the market declines.
+
+```{r}
+lda_fit$scaling
+```
+
+The coefficients provides the linear combination of `lagone` and `lagtwo` that are used to form the LDA decision rule. 
+
+The `plot()` function produces plots of the linear discriminants. The `Up` and `Down` observations are displayed separately. 
+
+```{r}
+plot(lda_fit)
+```
+
+The `predict()` function returns a list with three elements:
+
+- The first element, `class`, contains LDA's predictions about the movement of the market.
+- The second element, `posterior` is a matrix whose *k*th column contains the posterier probability that the corresponding observation belongs to the *k*th class.
+- Finally `x` contains the linear discriminants, described earlier.
+
+```{r}
+lda_pred <- predict(lda_fit, smarket_05)
+names(lda_pred)
+```
+
+The `LDA` and `logistic regression` predictions are almost identical:
+
+```{r}
+lda_class <- lda_pred$class
+table(log_pred, direction_05) # Logistic regression table
+table(lda_class, direction_05) # Linear Discriminant table
+```
+
+```{r}
+mean(lda_class == direction_05)
+```
+
