@@ -1512,9 +1512,10 @@ border-radius: 0px;
 </div>
 
 
-<p>First, we load in and attach our our dataset</p>
-<pre class="r"><code>library(ISLR2)
-names(Smarket)</code></pre>
+<p>First, we load in and attach our dataset</p>
+<pre class="r"><code>library(ISLR2)</code></pre>
+<pre><code>## Warning: package &#39;ISLR2&#39; was built under R version 4.2.2</code></pre>
+<pre class="r"><code>names(Smarket)</code></pre>
 <pre><code>## [1] &quot;Year&quot;      &quot;Lag1&quot;      &quot;Lag2&quot;      &quot;Lag3&quot;      &quot;Lag4&quot;      &quot;Lag5&quot;     
 ## [7] &quot;Volume&quot;    &quot;Today&quot;     &quot;Direction&quot;</code></pre>
 <pre class="r"><code>dim(Smarket) # View the number of rows and columns</code></pre>
@@ -1753,6 +1754,117 @@ function</p>
 </div>
 <div id="linear-disciminant-analysis" class="section level1">
 <h1>Linear Disciminant Analysis</h1>
+<p>We will now perform LDA on the <code>Smarket</code> data. We can fit
+an LDA mode using the <code>lda()</code> function, which is part of the
+<code>MASS</code> library. The syntax is identical, to <code>lm</code>,
+except we omit the <code>family</code> argument. We’ll fit the model
+using our training data created before.</p>
+<pre class="r"><code>library(MASS)</code></pre>
+<pre><code>## 
+## Attaching package: &#39;MASS&#39;</code></pre>
+<pre><code>## The following object is masked from &#39;package:ISLR2&#39;:
+## 
+##     Boston</code></pre>
+<pre class="r"><code>lda_fit &lt;- lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+lda_fit</code></pre>
+<pre><code>## Call:
+## lda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+## 
+## Prior probabilities of groups:
+##     Down       Up 
+## 0.491984 0.508016 
+## 
+## Group means:
+##             Lag1        Lag2
+## Down  0.04279022  0.03389409
+## Up   -0.03954635 -0.03132544
+## 
+## Coefficients of linear discriminants:
+##             LD1
+## Lag1 -0.6420190
+## Lag2 -0.5135293</code></pre>
+<pre class="r"><code>lda_fit$prior</code></pre>
+<pre><code>##     Down       Up 
+## 0.491984 0.508016</code></pre>
+<p>The output from <code>lda_fit</code> indicates that the prior
+probability the market went down was 49.2%, and the probability that it
+went up was 50.8%.</p>
+<pre class="r"><code>lda_fit$means</code></pre>
+<pre><code>##             Lag1        Lag2
+## Down  0.04279022  0.03389409
+## Up   -0.03954635 -0.03132544</code></pre>
+<p>It also provides the group means - these are the averages of each
+predictor within each class. These suggests that there is a tendency for
+the previous 2 day’s returns to be negative on days when the market
+increases, and a tendency for the previous days’ returns to be positive
+on days when the market declines.</p>
+<pre class="r"><code>lda_fit$scaling</code></pre>
+<pre><code>##             LD1
+## Lag1 -0.6420190
+## Lag2 -0.5135293</code></pre>
+<p>The coefficients provides the linear combination of
+<code>lagone</code> and <code>lagtwo</code> that are used to form the
+LDA decision rule.</p>
+<p>The <code>plot()</code> function produces plots of the linear
+discriminants. The <code>Up</code> and <code>Down</code> observations
+are displayed separately.</p>
+<pre class="r"><code>plot(lda_fit)</code></pre>
+<p><img src="data:image/png;base64,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Xlj6VqYKVc+BKU0pVQfDC0vfylSh6jkwpSml6mB4YelbmSpUPQemNKVUHQwvLH0rU4Wq58CUppSqg+GFpW9lqlD1HJjSlFJ1MLyw9K1MFSqaAz/6cCBSdTC8sPStTBUqmgMBHYhUHQwvLH0rU4Wq58CUppSqg+GFpW9lqlD1HJjSlFJ1MLyw9K1MFaqeA1OaUqoOhheWvpWpQtVzYEpTStXB8MLStzJVqHoOTGlKqToYXlj6VqYKVc+BKU0pVQfDC0vfylSh6jkwpSml6mB4YelbmSpUPQemNKVUHQwvLH0rU4Wq58CUppSqg+GFYaW3h12qejsNW0qpOhheKKBcCCi7l6qD+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CllCpn+19YenvYpaq307CVFX6t+P6rlGhh6V1ll6reTsNW0he82Wb/VUq0sPS+sktVb6dhKylVlRItLL2v7FJF27ntrkzp6zRmqaqUaGHpfWWXKtpOAa1LqiolWlh6X9mlqrfTsJWUqkqJFpbeV3ap6u00bCWlqlKihaX3lV3qfTvP3/15fHz827v3gbWGraRUVUq0sPS+skv9bufbH9a+n/nwZdflhq2kVFVKtLD0vrJLfW7n2fcbTwnd/7nbBRi2klJVKdHC0vvKLvW4nacHbTS/PZz7pv3N9FmnSzBsJaWqUqKFpfeVXepvOz89boL509oX3jRBvfd7l4swbCWlqlKihVGl54Ft+tuWk2u5bJP6qMtFGJqSUlUp0UIBHZLetuX8+WSy+YD9dDL5usuz8YampFRVGvxC50KdetuW5u7mtcfr2752G0NTUp64jGGhc6FOAsoN8sRlDAudC3Xq8yH8dPNVSx7CFxH+rtueG2HhretKjxHb9LctR9dq2X5b9EGXizA0OxB/1iJNXMaw0LlQp/625cNBU9BXa184a/p57U7prQzNDuRphIW3ris9SGzT47actHdipoc/Hrd+nb+SvtOrmAR0F/I0wsJb15UeJLbpc1teH2w8JJw+7XYBhmYH8jTCwlvXlR4ktul1W85frCd0+qTrJzIZmh3I0wgLb11XepDYpu9tOX97/OLw8PDJ8cvA59kZ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" width="672" /></p>
+<p>The <code>predict()</code> function returns a list with three
+elements:</p>
+<ul>
+<li>The first element, <code>class</code>, contains LDA’s predictions
+about the movement of the market.</li>
+<li>The second element, <code>posterior</code> is a matrix whose
+<em>k</em>th column contains the posterier probability that the
+corresponding observation belongs to the <em>k</em>th class.</li>
+<li>Finally <code>x</code> contains the linear discriminants, described
+earlier.</li>
+</ul>
+<pre class="r"><code>lda_pred &lt;- predict(lda_fit, smarket_05)
+names(lda_pred)</code></pre>
+<pre><code>## [1] &quot;class&quot;     &quot;posterior&quot; &quot;x&quot;</code></pre>
+<p>The <code>LDA</code> and <code>logistic regression</code> predictions
+are almost identical:</p>
+<pre class="r"><code>lda_class &lt;- lda_pred$class
+table(log_pred, direction_05) # Logistic regression table</code></pre>
+<pre><code>##         direction_05
+## log_pred Down  Up
+##     Down   35  35
+##     Up     76 106</code></pre>
+<pre class="r"><code>table(lda_class, direction_05) # Linear Discriminant table</code></pre>
+<pre><code>##          direction_05
+## lda_class Down  Up
+##      Down   35  35
+##      Up     76 106</code></pre>
+<pre class="r"><code>mean(lda_class == direction_05)</code></pre>
+<pre><code>## [1] 0.5595238</code></pre>
+<p>Applying a 50% threshold to the posterier probabilities allows us to
+recreate the predictions contained in <code>lda_class</code></p>
+<pre class="r"><code>sum(lda_pred$posterior[, 1] &gt;= .5)</code></pre>
+<pre><code>## [1] 70</code></pre>
+<pre class="r"><code>sum(lda_pred$posterior[, 1] &lt; .5)</code></pre>
+<pre><code>## [1] 182</code></pre>
+<p>Notice that the posterior probability output by the model corresponds
+to the proability that the market will decrease.</p>
+<pre class="r"><code>table(lda_class, direction_05)</code></pre>
+<pre><code>##          direction_05
+## lda_class Down  Up
+##      Down   35  35
+##      Up     76 106</code></pre>
+<p>If we wanted to use a posterior probability threshold other than 50%
+in order to make predictions, then we could easily do so. For instance,
+suppose that we wish to predict a market increase only if we are very
+certain that the market will indeed increase on that day, say, if the
+posterior probability is at least 90%/</p>
+<pre class="r"><code>sum(lda_pred$posterior[, 1] &gt; .9)</code></pre>
+<pre><code>## [1] 0</code></pre>
+<p>This tells us that no days in 2005 meet the threshold. In fact, the
+greatest posterior probability of decreases in all of 2005 was
+52.02%.</p>
+</div>
+<div id="quadratic-discriminant-analysis" class="section level1">
+<h1>Quadratic Discriminant Analysis</h1>
 </div>
 
 

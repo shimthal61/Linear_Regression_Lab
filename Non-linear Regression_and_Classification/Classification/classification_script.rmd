@@ -231,3 +231,27 @@ table(lda_class, direction_05) # Linear Discriminant table
 mean(lda_class == direction_05)
 ```
 
+Applying a 50% threshold to the posterier probabilities allows us to recreate the predictions contained in `lda_class`
+
+```{r}
+sum(lda_pred$posterior[, 1] >= .5)
+sum(lda_pred$posterior[, 1] < .5)
+```
+
+Notice that the posterior probability output by the model corresponds to the proability that the market will decrease.
+
+```{r}
+table(lda_class, direction_05)
+```
+
+If we wanted to use a posterior probability threshold other than 50% in order to make predictions, then we could easily do so. For instance, suppose that we wish to predict a market increase only if we are very certain that the market will indeed increase on that day, say, if the posterior probability is at least 90%/
+
+```{r}
+sum(lda_pred$posterior[, 1] > .9)
+```
+
+This tells us that no days in 2005 meet the threshold. In fact, the greatest posterior probability of decreases in all of 2005 was 52.02%.
+
+# Quadratic Discriminant Analysis
+
+
