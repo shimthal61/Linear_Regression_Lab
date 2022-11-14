@@ -254,4 +254,26 @@ This tells us that no days in 2005 meet the threshold. In fact, the greatest pos
 
 # Quadratic Discriminant Analysis
 
+We will not fit a QDA model to the `Smarket` data. QDA is implimented using the `qda()` function, also part of the `MASS` library. The syntax is equal to that of `lda()`. 
 
+```{r}
+qda_fit <- qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+qda_fit
+```
+
+This output contains the group means, but it does not contain the coefficients for the linear discriminants. This is because the QDA classifier is a quadratic, rather than a linear, function of the predictors. The `predict()` function works in exactly the same fashion as for LDA.
+
+```{r}
+qda_class <- predict(qda_fit, smarket_05)$class
+table(qda_class, direction_05)
+```
+
+We can assess the model accuracy simply by using the `mean()` function.
+
+```{r}
+mean(qda_class == direction_05)
+```
+
+Interestingly, the QDA predictors are accurate almost 60% of the time, even though the 2005 data was not used to fit the model. This level of accuracy is quite impressive for stock market data, which is known to be quite hard to model accurately. This suggests that the quadratic form may capture the true relationship more accurately than the linear forms assumed by LDA and logistic regression. However, it is recommended to evaluate this method's performance on a larger test set before assuming that this approach will consistently perform better.
+
+# Naive Bayes
