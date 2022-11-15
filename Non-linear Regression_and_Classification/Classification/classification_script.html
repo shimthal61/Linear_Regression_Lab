@@ -2084,7 +2084,80 @@ mean(test_y != knn_pred)</code></pre>
 <pre><code>## [1] 0.113</code></pre>
 <pre class="r"><code>mean(test_y != &quot;No&quot;)</code></pre>
 <pre><code>## [1] 0.059</code></pre>
-<p>The KNN error rate on the 100 test observations is just over 11%</p>
+<p>The KNN error rate on the 100 test observations is just over 11%.
+Although this may appear to be fairly good, only 6% of customers
+purchased insurance. We could get the error rate down to 6% by always
+predicting <code>No</code> regarless of the values of the
+predictors!</p>
+<p>Suppose there is some cost to trying to sell insurance to a given
+individual. If the company tries to sell insurance to a random selection
+of customers, then the success rate will only be 6%, which may be far
+too low given the costs involved. Instead, the company would like to
+sell insurance only to customers who are likely to buy it. So the
+overall error rate is not of interest, instead, the fraction of
+individuals that are correctly predicted to buy insurance is of
+interest.</p>
+<p>It turns out that KNN with <em><code>K</code></em> = 1 does far
+better than random guessing among the customers that are predicted to
+buy insurance. Among 77 such customers, 9, or 11.3%, actually do
+purchase insurance. This is double the rate that one would obtain from
+random guessing.</p>
+<pre class="r"><code>table(knn_pred, test_y)</code></pre>
+<pre><code>##         test_y
+## knn_pred  No Yes
+##      No  877  49
+##      Yes  64  10</code></pre>
+<p>Using <em><code>K</code></em> = 3, the success rate increases to 19%,
+and with <em><code>K</code></em> = 5, the rate is 26.7%. This is over
+four times the rate that results from random guessing. It appears that
+KNN is finding some real patterns in a difficult data set!</p>
+<pre class="r"><code>knn_pred &lt;- knn(train_x, test_x, train_y, k = 3)
+table(knn_pred, test_y)</code></pre>
+<pre><code>##         test_y
+## knn_pred  No Yes
+##      No  921  54
+##      Yes  20   5</code></pre>
+<pre class="r"><code>5 / 26</code></pre>
+<pre><code>## [1] 0.1923077</code></pre>
+<pre class="r"><code>knn_pred &lt;- knn(train_x, test_x, train_y, k = 5)
+table(knn_pred, test_y)</code></pre>
+<pre><code>##         test_y
+## knn_pred  No Yes
+##      No  930  55
+##      Yes  11   4</code></pre>
+<pre class="r"><code>4 / 15</code></pre>
+<pre><code>## [1] 0.2666667</code></pre>
+<p>However, it is still worth noting that only 15 customers are
+predicted to purchase insurance using KNN with <em><code>K</code></em> =
+5. In practice, the insurance company will wish to expend resources on
+convincing more than just 15 potential customers to buy insurance.</p>
+<p>As a comparison, we can also fit a logistic regression model to the
+data. If we use 0.5 as the predicted probability cut-off for the
+classifier, then we have a problem: only seven of the test observations
+are predicted to purchase insurance. Even worse, we are wrong about all
+of these! However, we are not required to use a cut-off of 0.5.</p>
+<pre class="r"><code>glm_fit &lt;- glm(Purchase ~ ., data = Caravan, family = binomial, subset = -test)</code></pre>
+<pre><code>## Warning: glm.fit: fitted probabilities numerically 0 or 1 occurred</code></pre>
+<pre class="r"><code>glm_prob &lt;- predict(glm_fit, Caravan[test, ], type = &quot;response&quot;)
+glm_pred &lt;- rep(&quot;No&quot;, 1000)
+glm_pred[glm_prob &gt; .5] &lt;- &quot;Yes&quot;
+table(glm_pred, test_y)</code></pre>
+<pre><code>##         test_y
+## glm_pred  No Yes
+##      No  934  59
+##      Yes   7   0</code></pre>
+<p>If we instead predict a purchase any time the predicted probability
+of purchase exceeds 0.25, we get much better results: we predict that 33
+people will purchase insurance, and we are correct for about 33% of
+these people. That is over five times better than random guessing!</p>
+<pre class="r"><code>glm_pred[glm_prob &gt; .25] &lt;- &quot;Yes&quot;
+table(glm_pred, test_y)</code></pre>
+<pre><code>##         test_y
+## glm_pred  No Yes
+##      No  919  48
+##      Yes  22  11</code></pre>
+<pre class="r"><code>11 / (22 + 11)</code></pre>
+<pre><code>## [1] 0.3333333</code></pre>
 </div>
 </div>
 
