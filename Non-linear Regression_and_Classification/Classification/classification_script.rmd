@@ -404,4 +404,4 @@ mean(test_y != knn_pred)
 mean(test_y != "No")
 ```
 
-The KNN error rate on the 100 test observations is just under 
+The KNN error rate on the 100 test observations is just over 11%

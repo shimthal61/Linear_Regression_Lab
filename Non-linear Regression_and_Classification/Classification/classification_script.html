@@ -1938,7 +1938,154 @@ nb_fit</code></pre>
 ## Y             [,1]     [,2]
 ##   Down  0.03389409 1.239191
 ##   Up   -0.03132544 1.220765</code></pre>
-<p>The output estimates the mean and SD for each variable.</p>
+<p>The output estimates the mean and SD for each variable in each class.
+For example, the mean for <code>lagone</code> when
+<code>Direction==Down</code> is 0.0428, and the SD is 1.23.</p>
+<pre class="r"><code>nb_fit$table$Lag1[1]</code></pre>
+<pre><code>## [1] 0.04279022</code></pre>
+<p>The <code>predict()</code> function is straightforward</p>
+<pre class="r"><code>nb_class &lt;- predict(nb_fit, smarket_05)
+table(nb_class, direction_05)</code></pre>
+<pre><code>##         direction_05
+## nb_class Down  Up
+##     Down   28  20
+##     Up     83 121</code></pre>
+<pre class="r"><code>mean(nb_class == direction_05)</code></pre>
+<pre><code>## [1] 0.5912698</code></pre>
+<p>Naive Bayes works very well on this dataset, with accurate
+predictions over 59% of the time. This is slightly worse than QDA, but
+much better than LDA.</p>
+<p>The <code>predict()</code> function can also generate estimates of
+the probability that each observation belongs to a particular class.</p>
+<pre class="r"><code>nb_preds &lt;- predict(nb_fit, smarket_05, type = &quot;raw&quot;)
+nb_preds[1:5, ]</code></pre>
+<pre><code>##           Down        Up
+## [1,] 0.4873164 0.5126836
+## [2,] 0.4762492 0.5237508
+## [3,] 0.4653377 0.5346623
+## [4,] 0.4748652 0.5251348
+## [5,] 0.4901890 0.5098110</code></pre>
+</div>
+<div id="k-nearest-neighbors" class="section level1">
+<h1>K-Nearest Neighbors</h1>
+<p>We can perform KNN using the <code>knn()</code> function, which is
+part of the <code>class</code> library. This function works differently
+to other model-fitting functions. Rather than a two-step approach where
+we first fit the model and then use the model to make predictions,
+<code>knn()</code> makes predictions using a single command. The
+function requires four inputs:</p>
+<ul>
+<li>A matrix containing the predictors associated with the training
+data, labelled <code>train_X</code>.</li>
+<li>A matrix containing the predictors associated with the data for
+which we wish to make predictions, labelled <code>test_X</code>.</li>
+<li>A vector containing the class labels for the training observations,
+labelled <code>train_direction</code>.</li>
+<li>A value for <em><code>K</code></em>, the number of nearest neighbors
+to be used for the classifier.</li>
+</ul>
+<p>We use the <code>cbind()</code> function, short for <em>column
+bind</em>, to bind the <code>lagone</code> and <code>lagtwo</code>
+variables together into the two matrices, one for the training set and
+the other for the test set.</p>
+<pre class="r"><code>library(class)
+train_x &lt;- cbind(Lag1, Lag2)[train, ]
+test_x &lt;- cbind(Lag1, Lag2)[!train, ]
+train_direction &lt;- Direction[train]</code></pre>
+<p>Now the <code>knn()</code> function can be used to predict the
+markest’s movements for the dates in 2005. We set a random seed using
+<code>set.seed()</code>, because if several observations are tied as
+nearest neighbors, then <code>R</code> will randomly break the tie.
+Therefore, a seed must be sed in order to ensure reproducibility.</p>
+<pre class="r"><code>set.seed(42)
+knn_pred &lt;- knn(train_x, test_x, train_direction, k = 1)
+table(knn_pred, direction_05)</code></pre>
+<pre><code>##         direction_05
+## knn_pred Down Up
+##     Down   43 58
+##     Up     68 83</code></pre>
+<p>We can find the success rate easily by calculating the percentage of
+correctly identified classifier</p>
+<pre class="r"><code>(83 + 43) / 252</code></pre>
+<pre><code>## [1] 0.5</code></pre>
+<p>The results of using <em><code>K</code></em> = 1 are not very good,
+since only 50% of the observations are correctly predicted. Of course,
+it may be that <em><code>K</code></em> = 1 is an overly flexible fit to
+the data. Below, we repeat the analysis using <em><code>K</code></em> =
+3.</p>
+<pre class="r"><code>knn_pred &lt;- knn(train_x, test_x, train_direction, k = 3)
+table(knn_pred, direction_05)</code></pre>
+<pre><code>##         direction_05
+## knn_pred Down Up
+##     Down   48 55
+##     Up     63 86</code></pre>
+<pre class="r"><code>mean(knn_pred == direction_05)</code></pre>
+<pre><code>## [1] 0.531746</code></pre>
+<p>The results are slightly better, however increasing
+<em><code>K</code></em> further provides no further improvements. For
+our dataset, is appears as though QDA provides the best results out of
+the methods we have examined so far.</p>
+<div id="knn-on-insurance-dataset" class="section level2">
+<h2>KNN on <code>Insurance</code> Dataset</h2>
+<p>This data set includes 85 predictors that measure demographic
+characteristics for 5822 individuals. The output variable is
+<code>Purchase</code>, which indicates whether or not a given individual
+purchanes a caravan insurance policy. In this data set, only 6% of
+people purchaes caravan insurance</p>
+<pre class="r"><code>dim(Caravan)</code></pre>
+<pre><code>## [1] 5822   86</code></pre>
+<pre class="r"><code>attach(Caravan)
+summary(Purchase)</code></pre>
+<pre><code>##   No  Yes 
+## 5474  348</code></pre>
+<p>KNN predicts the class of a given test observation by identifying the
+observations that are nearest to it, meaning the scale of variables
+matters. Variables on a large scale will have a much larger effect on
+the <em>distance</em> between the observations, and hence on the KNN
+classifier, than variables on a small scale. For instance, imagine a
+dataset that contains two variables, <code>salary</code> and
+<code>age</code>. When using KNN, a difference of $1000 in salary is
+huge compared to a difference of 50 years in age. Consequently,
+<code>salary</code> will drive the KNN classifier results, and
+<code>age</code> will have near enough no effect. This is contrary to
+our intuition that a salary difference of $1000 is quite small compared
+to an age difference of 50 years. Furthermore, the importance of scale
+to the KNN classifier leads to another issue: if we measured
+<code>salary</code> in Japanese yen, or if we measured age in minutes,
+then we’d get a quite difference classification result if these
+variables were measured using a different scale.</p>
+<p>A good way to handle this problem is standatise the data so that all
+the variables are given a mean of 0 and an SD of one. Then, all
+variables will be a compariable scale. The <code>scale()</code> function
+does just this. By standatising the data, we exlude column 86, because
+it is a qualititive predictor, <code>Purchase</code>.</p>
+<pre class="r"><code>standardised_x &lt;- scale(Caravan[, -86])</code></pre>
+<p>Every column of <code>standardised_x</code> has an SD of 1 and a mean
+of 0.</p>
+<p>We now split the observations into a test set, containing the first
+1000 observations, and a training set, containing the remaining
+observations.</p>
+<pre class="r"><code># Creates a vector from values 1 - 1000
+test &lt;- 1:1000
+
+# Creates a submatrix containing the observations not ranging 1 - 1000
+train_x &lt;- standardised_x[-test, ]
+
+# Creates a submatrix containing the observations ranging 1 - 1000
+test_x &lt;- standardised_x[test, ]
+train_y &lt;- Purchase[-test]
+test_y &lt;- Purchase[test]</code></pre>
+<p>We then fit a KNN model on the training data using
+<em><code>K</code></em> = 1, and evaluate its performance on the test
+data.</p>
+<pre class="r"><code>set.seed(42)
+knn_pred &lt;- knn(train_x, test_x, train_y, k = 1)
+mean(test_y != knn_pred)</code></pre>
+<pre><code>## [1] 0.113</code></pre>
+<pre class="r"><code>mean(test_y != &quot;No&quot;)</code></pre>
+<pre><code>## [1] 0.059</code></pre>
+<p>The KNN error rate on the 100 test observations is just over 11%</p>
+</div>
 </div>
 
 
