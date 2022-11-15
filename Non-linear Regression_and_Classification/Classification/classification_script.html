@@ -1513,9 +1513,8 @@ border-radius: 0px;
 
 
 <p>First, we load in and attach our dataset</p>
-<pre class="r"><code>library(ISLR2)</code></pre>
-<pre><code>## Warning: package &#39;ISLR2&#39; was built under R version 4.2.2</code></pre>
-<pre class="r"><code>names(Smarket)</code></pre>
+<pre class="r"><code>library(ISLR2)
+names(Smarket)</code></pre>
 <pre><code>## [1] &quot;Year&quot;      &quot;Lag1&quot;      &quot;Lag2&quot;      &quot;Lag3&quot;      &quot;Lag4&quot;      &quot;Lag5&quot;     
 ## [7] &quot;Volume&quot;    &quot;Today&quot;     &quot;Direction&quot;</code></pre>
 <pre class="r"><code>dim(Smarket) # View the number of rows and columns</code></pre>
@@ -1865,6 +1864,81 @@ greatest posterior probability of decreases in all of 2005 was
 </div>
 <div id="quadratic-discriminant-analysis" class="section level1">
 <h1>Quadratic Discriminant Analysis</h1>
+<p>We will not fit a QDA model to the <code>Smarket</code> data. QDA is
+implimented using the <code>qda()</code> function, also part of the
+<code>MASS</code> library. The syntax is equal to that of
+<code>lda()</code>.</p>
+<pre class="r"><code>qda_fit &lt;- qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+qda_fit</code></pre>
+<pre><code>## Call:
+## qda(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+## 
+## Prior probabilities of groups:
+##     Down       Up 
+## 0.491984 0.508016 
+## 
+## Group means:
+##             Lag1        Lag2
+## Down  0.04279022  0.03389409
+## Up   -0.03954635 -0.03132544</code></pre>
+<p>This output contains the group means, but it does not contain the
+coefficients for the linear discriminants. This is because the QDA
+classifier is a quadratic, rather than a linear, function of the
+predictors. The <code>predict()</code> function works in exactly the
+same fashion as for LDA.</p>
+<pre class="r"><code>qda_class &lt;- predict(qda_fit, smarket_05)$class
+table(qda_class, direction_05)</code></pre>
+<pre><code>##          direction_05
+## qda_class Down  Up
+##      Down   30  20
+##      Up     81 121</code></pre>
+<p>We can assess the model accuracy simply by using the
+<code>mean()</code> function.</p>
+<pre class="r"><code>mean(qda_class == direction_05)</code></pre>
+<pre><code>## [1] 0.5992063</code></pre>
+<p>Interestingly, the QDA predictors are accurate almost 60% of the
+time, even though the 2005 data was not used to fit the model. This
+level of accuracy is quite impressive for stock market data, which is
+known to be quite hard to model accurately. This suggests that the
+quadratic form may capture the true relationship more accurately than
+the linear forms assumed by LDA and logistic regression. However, it is
+recommended to evaluate this method’s performance on a larger test set
+before assuming that this approach will consistently perform better.</p>
+</div>
+<div id="naive-bayes" class="section level1">
+<h1>Naive Bayes</h1>
+<p>Next, we fit a naive Bayes model to the <code>Smarket</code> data. We
+can use the <code>naiveBayes()</code> function, which is part of the
+<code>e1071</code> library. The syntax is identical to the previous
+models. By default, each quantitive feature is modelled using a Gaussian
+distribution. However, a kernel densitiy method can also be used to
+estimate distributions,</p>
+<pre class="r"><code>library(e1071)</code></pre>
+<pre><code>## Warning: package &#39;e1071&#39; was built under R version 4.2.2</code></pre>
+<pre class="r"><code>nb_fit &lt;- naiveBayes(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+nb_fit</code></pre>
+<pre><code>## 
+## Naive Bayes Classifier for Discrete Predictors
+## 
+## Call:
+## naiveBayes.default(x = X, y = Y, laplace = laplace)
+## 
+## A-priori probabilities:
+## Y
+##     Down       Up 
+## 0.491984 0.508016 
+## 
+## Conditional probabilities:
+##       Lag1
+## Y             [,1]     [,2]
+##   Down  0.04279022 1.227446
+##   Up   -0.03954635 1.231668
+## 
+##       Lag2
+## Y             [,1]     [,2]
+##   Down  0.03389409 1.239191
+##   Up   -0.03132544 1.220765</code></pre>
+<p>The output estimates the mean and SD for each variable.</p>
 </div>
 
 

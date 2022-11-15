@@ -277,3 +277,131 @@ mean(qda_class == direction_05)
 Interestingly, the QDA predictors are accurate almost 60% of the time, even though the 2005 data was not used to fit the model. This level of accuracy is quite impressive for stock market data, which is known to be quite hard to model accurately. This suggests that the quadratic form may capture the true relationship more accurately than the linear forms assumed by LDA and logistic regression. However, it is recommended to evaluate this method's performance on a larger test set before assuming that this approach will consistently perform better.
 
 # Naive Bayes
+
+Next, we fit a naive Bayes model to the `Smarket` data. We can use the `naiveBayes()` function, which is part of the `e1071` library. The syntax is identical to the previous models. By default, each quantitive feature is modelled using a Gaussian distribution. However, a kernel densitiy method can also be used to estimate distributions,
+
+```{r}
+library(e1071)
+nb_fit <- naiveBayes(Direction ~ Lag1 + Lag2, data = Smarket, subset = train)
+nb_fit
+```
+
+The output estimates the mean and SD for each variable in each class. For example, the mean for `lagone`  when `Direction==Down` is 0.0428, and the SD is 1.23. 
+
+```{r}
+nb_fit$table$Lag1[1]
+```
+
+The `predict()` function is straightforward
+
+```{r}
+nb_class <- predict(nb_fit, smarket_05)
+table(nb_class, direction_05)
+```
+
+```{r}
+mean(nb_class == direction_05)
+```
+
+Naive Bayes works very well on this dataset, with accurate predictions over 59% of the time. This is slightly worse than QDA, but much better than LDA. 
+
+The `predict()` function can also generate estimates of the probability that each observation belongs to a particular class.
+
+```{r}
+nb_preds <- predict(nb_fit, smarket_05, type = "raw")
+nb_preds[1:5, ]
+```
+
+# K-Nearest Neighbors
+
+We can perform KNN using the `knn()` function, which is part of the `class` library. This function works differently to other model-fitting functions. Rather than a two-step approach where we first fit the model and then use the model to make predictions, `knn()` makes predictions using a single command. The function requires four inputs:
+
+- A matrix containing the predictors associated with the training data, labelled `train_X`.
+- A matrix containing the predictors associated with the data for which we wish to make predictions, labelled `test_X`.
+- A vector containing the class labels for the training observations, labelled `train_direction`.
+- A value for *`K`*, the number of nearest neighbors to be used for the classifier.
+
+We use the `cbind()` function, short for *column bind*, to bind the `lagone` and `lagtwo` variables together into the two matrices, one for the training set and the other for the test set.
+
+```{r}
+library(class)
+train_x <- cbind(Lag1, Lag2)[train, ]
+test_x <- cbind(Lag1, Lag2)[!train, ]
+train_direction <- Direction[train]
+```
+
+Now the `knn()` function can be used to predict the markest's movements for the dates in 2005. We set a random seed using `set.seed()`, because if several observations are tied as nearest neighbors, then `R` will randomly break the tie. Therefore, a seed must be sed in order to ensure reproducibility. 
+
+```{r}
+set.seed(42)
+knn_pred <- knn(train_x, test_x, train_direction, k = 1)
+table(knn_pred, direction_05)
+```
+
+We can find the success rate easily by calculating the percentage of correctly identified classifier
+
+```{r}
+(83 + 43) / 252
+```
+
+The results of using *`K`* = 1 are not very good, since only 50% of the observations are correctly predicted. Of course, it may be that *`K`* = 1 is an overly flexible fit to the data. Below, we repeat the analysis using *`K`* = 3.
+
+```{r}
+knn_pred <- knn(train_x, test_x, train_direction, k = 3)
+table(knn_pred, direction_05)
+mean(knn_pred == direction_05)
+```
+
+The results are slightly better, however increasing *`K`* further provides no further improvements. For our dataset, is appears as though QDA provides the best results out of the methods we have examined so far.
+
+## KNN on `Insurance` Dataset
+
+This data set includes 85 predictors that measure demographic characteristics for 5822 individuals. The output variable is `Purchase`, which indicates whether or not a given individual purchanes a caravan insurance policy. In this data set, only 6% of people purchaes caravan insurance
+
+```{r}
+dim(Caravan)
+```
+
+```{r}
+attach(Caravan)
+summary(Purchase)
+```
+
+KNN predicts the class of a given test observation by identifying the observations that are nearest to it, meaning the scale of variables matters. Variables on a large scale will have a much larger effect on the *distance* between the observations, and hence on the KNN classifier, than variables on a small scale. For instance, imagine a dataset that contains two variables, `salary` and `age`. When using KNN, a difference of $1000 in salary is huge compared to a difference of 50 years in age. Consequently, `salary` will drive the KNN classifier results, and `age` will have near enough no effect. This is contrary to our intuition that a salary difference of $1000 is quite small compared to an age difference of 50 years. Furthermore, the importance of scale to the KNN classifier leads to another issue: if we measured `salary` in Japanese yen, or if we measured age in minutes, then we'd get a quite difference classification result if these variables were measured using a different scale.
+
+A good way to handle this problem is standatise the data so that all the variables are given a mean of 0 and an SD of one. Then, all variables will be a compariable scale. The `scale()` function does just this. By standatising the data, we exlude column 86, because it is a qualititive predictor, `Purchase`.
+
+```{r}
+standardised_x <- scale(Caravan[, -86])
+```
+
+Every column of `standardised_x` has an SD of 1 and a mean of 0.
+
+We now split the observations into a test set, containing the first 1000 observations, and a training set, containing the remaining observations.
+
+```{r}
+# Creates a vector from values 1 - 1000
+test <- 1:1000
+
+# Creates a submatrix containing the observations not ranging 1 - 1000
+train_x <- standardised_x[-test, ]
+
+# Creates a submatrix containing the observations ranging 1 - 1000
+test_x <- standardised_x[test, ]
+train_y <- Purchase[-test]
+test_y <- Purchase[test]
+```
+
+We then fit a KNN model on the training data using *`K`* = 1, and evaluate its performance on the test data.
+
+```{r}
+set.seed(42)
+knn_pred <- knn(train_x, test_x, train_y, k = 1)
+mean(test_y != knn_pred)
+```
+
+```{r}
+mean(test_y != "No")
+```
+
+The KNN error rate on the 100 test observations is just under 
