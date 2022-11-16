@@ -1512,7 +1512,112 @@ border-radius: 0px;
 </div>
 
 
-
+<div id="the-validation-set-approach" class="section level1">
+<h1>The Validation Set Approach</h1>
+<p>In the previous workshops, we have used the validation set approach
+in order to create a training data set. Here, we use this approach in
+order to estimate the test error rates that result from fitting various
+linear models on the <code>Auto</code> data set.</p>
+<p>Before we begin, let’s use the <code>set.seed()</code> function in
+order to set <code>R</code>’s random number generator, to ensure
+reproduciblity. It is generally a good idea to set the seed when
+performing analyses such a cross-validation that contains an element of
+randomness, so that the results can be reproduced preciesly at a later
+time.</p>
+<p>We begin by using the <code>sample()</code> function to split the
+test of observations into two halves, by selecting a random subset of
+196 observations out of the original 392. We refer to these observations
+as the training set.</p>
+<pre class="r"><code>library(ISLR2)
+set.seed(42)
+train &lt;- sample(392, 196)</code></pre>
+<p>We then use the <code>subset</code> argument in <code>lm()</code> to
+fit a linear regression using only the observations corresponding to the
+training data.</p>
+<pre class="r"><code>lm_fit &lt;- lm(mpg ~ horsepower, data = Auto, subset = train)</code></pre>
+<p>We now use the <code>predict()</code> function to estimate the
+response for all 392 observations, and use the <code>mean()</code>
+function to calculate the MSE of the 196 observations in the validation
+set. Not that the <code>-train</code> index below selects only the
+observations that are not in the training set.</p>
+<pre class="r"><code>attach(Auto)
+mean((mpg - predict(lm_fit, Auto))[-train]^2)</code></pre>
+<pre><code>## [1] 22.88689</code></pre>
+<p>Therefore, the estimated test MSE for the linear regression fit is
+22.89. We can use the <code>poly()</code> function to estimate the test
+error rate for the quadratic and cubic regressions.</p>
+<pre class="r"><code>quad_fit &lt;- lm(mpg ~ poly(horsepower, 2), data = Auto, subset = train)
+mean((mpg - predict(quad_fit, Auto))[-train]^2)</code></pre>
+<pre><code>## [1] 19.39095</code></pre>
+<pre class="r"><code>cub_fit &lt;- lm(mpg ~ poly(horsepower, 3), data = Auto, subset = train)
+mean((mpg - predict(cub_fit, Auto))[-train]^2)</code></pre>
+<pre><code>## [1] 19.55162</code></pre>
+<p>These error rates and 19.39 and 18.55, respectively. If we choose a
+different training set instead (e.g. by changing the seed value), then
+we will obtain somewhat different errors on the validation set.</p>
+<p>These results are consistent with our previous findings: a model that
+predicts <code>mpg</code> using a quadratic function of
+<code>horsepower</code> performs better than a model that involves only
+a linear function of <code>horsepower</code>, and there is little
+evidence in favour of a model that uses a cubic function of
+<code>horsepower</code>.</p>
+</div>
+<div id="leave-one-out-cross-validation-loocv" class="section level1">
+<h1>Leave-One-Out Cross Validation (LOOCV)</h1>
+<p>The LOOCV estimate can be automatically computer for any generalised
+linear model using the <code>glm()</code> and <code>cv.glm()</code>
+functions. The <code>glm()</code> can be used to perform linear
+regression just like the <code>lm()</code> function, but we are able to
+use the <code>cv.glm()</code> function with it.</p>
+<pre class="r"><code>library(boot)
+glm_fit &lt;- glm(mpg ~ horsepower, data = Auto)
+cv_err &lt;- cv.glm(Auto, glm_fit)
+cv_err$delta</code></pre>
+<pre><code>## [1] 24.23151 24.23114</code></pre>
+<p>Tne <code>cv.glm()</code> function produces a list with several
+components. The two numbers in the <code>delta</code> vector contain the
+cross-validation results. In this case, the numbers are near identical,
+and correspond to the LOOCV test error rate.</p>
+<p>We can repeat this procedure for increasingly complex polynomial
+fits. To automate the process, we use the <code>for()</code> function to
+iteratively fit the polynomial regressions for polynomials of order
+<em><code>i</code></em> <code>= 1</code> to <em><code>i</code></em>
+<code>= 10</code>, computes the associated cross-validation error, and
+stores it in the <em><code>i</code></em>`<code>th</code> element of the
+vector <code>cv_err</code>.</p>
+<pre class="r"><code>cv_error &lt;- rep(0, 10)
+for (i in 1:10) {
+  glm_fit &lt;- glm(mpg ~ poly(horsepower, i), data = Auto)
+  cv_error[i] &lt;- cv.glm(Auto, glm_fit)$delta[1]
+}
+cv_error</code></pre>
+<pre><code>##  [1] 24.23151 19.24821 19.33498 19.42443 19.03321 18.97864 18.83305 18.96115
+##  [9] 19.06863 19.49093</code></pre>
+<p>We can see a sharp drop in the estimates MSE betweem the linear and
+quadratic fits, but then no clear improveents from using higher-rder
+polynomials.</p>
+</div>
+<div id="k-fold-cross-validation" class="section level1">
+<h1><em>k</em>-Fold Cross-Validation</h1>
+<p>The <code>cv.glm()</code> can also be used to implement
+<em><code>k</code></em>-fold CV. Below, we use
+<em><code>k</code></em><code>= 10</code>, a common choice for
+<em><code>k</code></em>, on the <code>Auto</code> data set. We once
+again set a random seed and initialise a vector we will store the CV
+errors corresponding to the polynomial fis of order 1 - 10.</p>
+<pre class="r"><code>set.seed(42)
+cv_error &lt;- rep(0, 10)
+for (i in 1:10) {
+  glm_fit &lt;- glm(mpg ~ poly(horsepower, i), data = Auto)
+  cv_error[i] &lt;- cv.glm(Auto, glm_fit, K = 10)$delta[1]
+}
+cv_error</code></pre>
+<pre><code>##  [1] 24.38418 19.31867 19.41099 19.18981 19.30455 18.77105 19.03524 19.08953
+##  [9] 18.77973 19.36024</code></pre>
+<p>The computational time is much quicker than that of LOOCV. We again
+see evidence that using cubic or higher-order polynomials leads to a
+lower test error than simply using a quadratic.</p>
+</div>
 
 
 
