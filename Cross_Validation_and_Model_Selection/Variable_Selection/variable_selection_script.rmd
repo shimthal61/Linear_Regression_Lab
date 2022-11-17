@@ -267,3 +267,4 @@ We see that cross-validation selects a 10-variable model. We now perform best su
 reg_best <- regsubsets(Salary ~ ., data = hitters, nvmax = 19)
 coef(reg_best, 10)
 ```
+
