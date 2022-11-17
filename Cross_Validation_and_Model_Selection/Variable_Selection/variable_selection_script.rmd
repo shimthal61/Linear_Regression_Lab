@@ -204,7 +204,7 @@ predict.regsubsets <- function(object, newdata, id, ...) {
     form <- as.formula(object$call[[2]])
     mat <- model.matrix(form, newdata)
     coefi <- coef(object, id = id)
-    xvars <- names(coef)
+    xvars <- names(coefi)
     mat[, xvars] %*% coefi
 }
 ```
@@ -243,4 +243,27 @@ for (j in 1:k) {
             mean((hitters$Salary[folds == j] - pred)^2)
     }
 }
+```
+
+```{r}
+dim(cv_errors)
+```
+
+This has given us a 10 x 19 matrix of which the *(j,i)* element corresponds to the test MSE for the *j*th cross-validation fold for the best *i*-variable model. We use the `apply()` function to average over the columns of this matrix in order to obtain a vector for which the *i*th element is the cross-validation error for the *i*-variable model.
+
+```{r}
+mean_cv_err <- apply(cv_errors, 2, mean)
+mean_cv_err
+```
+
+```{r}
+par(mfrow = c(1, 1))
+plot(mean_cv_err, type = "b")
+```
+
+We see that cross-validation selects a 10-variable model. We now perform best subset selection on the full data set in order to obtain the 10-variable model.
+
+```{r}
+reg_best <- regsubsets(Salary ~ ., data = hitters, nvmax = 19)
+coef(reg_best, 10)
 ```
