@@ -1,0 +1,94 @@
+---
+title: "Model Selection"
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    font:family: Lato
+  pdf_document:
+    toc: yes
+---
+
+# Regression Models
+
+When presented when a regression problem and a data set of potential input variables, it can be difficult to know where to start. There are a couple of approaches we can use here. Either we just include *everything* in our model at the beginning, and then try to refine in later, or we try and build the model up more slowly by choosing a subset of input variables that appear most relevant, adding mroe later if we want to further improve the model. If the number of input variables is reasonably small, then including everything at once can be fine, otherwise I can start with correlation plots of the relationships in the data to determine by eye which appear most relevant. The `corrplot` package can help visualise the magnitude of correlations.
+
+```{r}
+library(ISLR2)
+library(corrplot)
+
+cor <- cor(Boston)
+corrplot(cor)
+```
+
+Now that we have an initial set of variables, the easiest thing to do is fit a basic linear regression model using all the input variables. We can then calculate the MSE for this model that will give a baseline value that we can attempt to later minimise. The next step would be to check the regression assumptions. Importantly, what we care about here would be the VIF (as variables too highly correlated will cause issues irrespective of the model we use), and any evidence of non-linearity. Any of the assumption plots that depend upon the model fit (such as outliers, leverage points, normality, and homogeneuity of variance) can be ignored for now because we have not settled on our final model fit.
+
+The plan at this stage is to work on each input variable in turn to see if using a *non-linear* aproach will improve things. This can start with identifying non-linearity in the assumption plots, but one of the best ways is to view the fitted effect with the *partial residuals*. For instance, in the "Auto" dataset, if we were working with the model `lm(mpg ~ weight + horsepower, data = Auto)`, we would start by focusing on the `weight` variable.
+
+```{r}
+library(performance)
+library(see)
+model <- lm(mpg ~ weight + horsepower, data = Auto)
+check_model(model)
+```
+
+```{r}
+library(effects)
+plot(effect("weight", mod = model, partial.residuals = TRUE))
+```
+
+The plot above shows the model prediction and 95% confidence bands in blue, as well as the partial residuals as pink circles. The general shape in the data is given by the pink lines (using LOESS smoothing method). The degree to which the blue model fit differes from the pink suggests that we may not be capturing the correct shape of the relationship.
+
+In this example, there seems to be a non-linear relationship between `weight` and `mpg`. We may decide to first try a polynomial fit and use cross-validation to determine the degree of the polynomial. We can try up to an 8th degree polynomial, where we repeatedly use the `train()` function with a different model formula, then gather the MSE values and store them in a vector for plotting
+
+```{r}
+library(caret)
+
+data("Auto")
+
+set.seed(42)
+
+train_control <- trainControl(method = "LOOCV")
+
+fit_1 <- train(mpg ~ weight + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_2 <- train(mpg ~ poly(weight, 2) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_3 <- train(mpg ~ poly(weight, 3) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_4 <- train(mpg ~ poly(weight, 4) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_5 <- train(mpg ~ poly(weight, 5) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_6 <- train(mpg ~ poly(weight, 6) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_7 <- train(mpg ~ poly(weight, 7) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+fit_8 <- train(mpg ~ poly(weight, 8) + horsepower,
+  data = Auto, method = "lm", trControl = train_control)
+
+MSE <- rep(0, 8)
+
+MSE[i] <- sapply(paste("fit_", 1:8, sep = ""), getElement("results"))
+```
+
+
+```{r}
+lapply(paste("fit_", 1:8, sep = ""), )
+```
+
+fit_1$results$RMSE
+
+```{r}
+
+```
+
+
