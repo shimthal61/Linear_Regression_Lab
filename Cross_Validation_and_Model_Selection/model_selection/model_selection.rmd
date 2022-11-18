@@ -75,20 +75,19 @@ fit_7 <- train(mpg ~ poly(weight, 7) + horsepower,
 fit_8 <- train(mpg ~ poly(weight, 8) + horsepower,
   data = Auto, method = "lm", trControl = train_control)
 
-MSE <- rep(0, 8)
-
-MSE[i] <- sapply(paste("fit_", 1:8, sep = ""), getElement("results"))
+mse <- rep(0, 8)
 ```
 
 
 ```{r}
-lapply(paste("fit_", 1:8, sep = ""), )
+for (i in 1:8) {
+  assign(mse[i], paste("fit_", i, sep = ""))
+}
+mse
 ```
 
-fit_1$results$RMSE
+
 
 ```{r}
-
+paste("fit_", i, sep = "")[results]
 ```
-
-
