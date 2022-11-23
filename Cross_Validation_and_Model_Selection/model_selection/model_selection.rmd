@@ -126,3 +126,67 @@ We can see here that 9 degrees of freedom produces the lowest MSE.
 bs_fit <- train(mpg ~ bs(weight, df = 9), data = Auto, method = "lm", trControl = train_control)
 ```
 
+We could do the same sort of cross-validation exercise with natural and smoothing splines, and then compare the fits visually (using `plot.gam(mod.1, residuals=T` for a GAM model), and try to decide which is the best fit from the information we have available. 
+
+## Natural Splines
+
+```{r}
+mse <- rep(0, 20)
+
+for (i in 1:20) {
+  Data <- Auto
+  Data$nspline <- ns(Auto$weight, df=i)
+  fit <- train(mpg ~ nspline + horsepower, data = Data, method = "lm", trControl = train_control)
+  mse[i] <- fit$results$RMSE
+}
+
+which.min(mse)
+
+plot(1:20, mse, type = "b", xlab = "df")
+```
+
+# Example
+
+```{r}
+# 0 Inputs
+mod_0 <- lm(mgp ~ 1, data = Auto)
+
+# 1 Input
+weight_fit <- lm(mpg ~ poly(weight, 4), data = Auto)
+horse_fit <- lm(mpg ~ poly(horsepower, 2), data = Auto)
+cylind_fit <- lm(mpg ~ cylinders, data = Auto)
+which.min(c(deviance(weight_fit), deviance(horse_fit), deviance(cylind_fit)))
+
+# poly(weight, 4) is the winner
+
+# 2 Inputs
+
+weight_horse_fit <- lm(mpg ~ poly(weight, 4) + poly(horsepower, 2), data = Auto)
+weight_cyl_fit <- lm(mpg ~ poly(weight, 4) + cylinders, data = Auto)
+horse_cyl_fit <- lm(mpg ~ poly(horsepower, 2) + cylinders, data = Auto)
+which.min(c(deviance(weight_horse_fit), deviance(weight_cyl_fit), deviance(horse_cyl_fit)))
+
+# poly(weight, 4) + poly(horsepower, 2) is the winner
+
+# 3 Inputs
+
+full_fit <- lm(mpg ~ poly(weight, 4) + poly(horsepower, 2) + cylinders, data = Auto)
+
+# Cross Validation
+Auto$const <- rep(0, dim(Auto)[1])
+
+fit_1 <- train(mpg ~ const, data = Auto, method = "lm", trControl = train_control)
+fit_2 <- train(mpg ~ poly(weight, 4), data = Auto, method = "lm", trControl = train_control)
+fit_3 <- train(mpg ~ poly(weight, 4) + poly(horsepower, 2), data = Auto, method = "lm", trControl = train_control)
+fit_4 <- train(mpg ~ poly(weight, 4) + poly(horsepower, 2) + cylinders, data = Auto, method = "lm", trControl = train_control)
+
+mod_comp <- data.frame(mse = c(fit_1$results$RMSE, fit_2$results$RMSE, fit_3$results$RMSE, fit_4$results$RMSE),
+                      Inputs = c(0, 1, 2, 3))
+
+plot(mod_comp$Inputs, mod_comp$mse, type = "b", xlab = "Number of Input Variables", ylab = "RMSE")
+```
+
+The conclusion is that two inputs of horsepower and weight make the model better than each term individually, but adding a third input (the cylinders variable) makes no appreciable improvement. In this instance we would likely drop cylinders from the model and stick with only two inputs as our final predictive model.
+
+# Classification Models
+
