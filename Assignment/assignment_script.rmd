@@ -120,4 +120,10 @@ age_ns_RMSE <- min(mse)
 plot(1:10, mse, type = "b", xlab = "Degrees of Freedom")
 ```
 
-### 
+### Age Selection
+
+```{r}
+which.min(c(age_lin_RMSE, age_poly_RMSE, age_bs_RMSE, age_ns_RMSE))
+```
+
+The natural splines results in the lowest RMSE
