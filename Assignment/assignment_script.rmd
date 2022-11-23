@@ -1,6 +1,123 @@
 ---
-output: reprex::reprex_document
-knit: reprex::reprex_render
+title: "Assignment"
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    font:family: Lato
+  pdf_document:
+    toc: yes
 ---
 
+# Regression Problem
 
+```{r}
+library(ISLR2)
+library(corrplot)
+library(performance)
+library(effects)
+library(caret)
+library(splines)
+```
+
+```{r}
+reg_data <- Boston[, c(5, 7, 8, 12, 13)]
+colnames(reg_data)
+```
+
+```{r}
+cor <- cor(reg_data)
+corrplot(cor)
+```
+
+```{r}
+lin_mod <- lm(nox ~ age + dis + lstat + medv, data = reg_data)
+check_model(lin_mod)
+```
+
+It appears as though we have a non-linear fit.
+
+## Age
+
+```{r}
+plot(effect("age", mod = lin_mod, partial.residuals = TRUE))
+```
+
+```{r}
+data("reg_data")
+
+set.seed(42)
+
+train_control <- trainControl(method = "LOOCV")
+```
+
+### Linear fit
+
+```{r}
+age_lin <- train(nox ~ age, data = reg_data, method = "lm", trControl = train_control)
+age_lin_RMSE <- age_lin$results$RMSE
+```
+
+### Poly Fit
+
+```{r}
+mse <- rep(0, 8)
+
+for (i in 1:8) {
+    data <- reg_data
+    data$polyfit <- poly(data$age, i)
+    poly_age <- train(nox ~ polyfit, data = data,
+        method = "lm", trControl = train_control)
+    mse[i] <- poly_age$results$RMSE
+}
+
+age_poly_RMSE <- min(mse)
+
+which.min(mse)
+
+plot(1:8, mse, type = "b", xlab = "Degree")
+```
+
+
+We can see here that a quadratic fit (2-degrees) results in the lowest RMSE. Let's now have a look at other methods.
+
+### Basis Splines Fit
+
+```{r}
+mse <- rep(0, 20)
+
+for (i in 1:20) {
+    data <- reg_data
+    data$bspline <- bs(reg_data$age, df = i)
+    bs_age <- train(nox ~ bspline, data = data,
+        method = "lm", trControl = train_control)
+    mse[i] <- bs_age$results$RMSE
+}
+
+age_bs_RMSE <- min(mse)
+
+which.min(mse)
+
+plot(1:20, mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Natural Splines
+
+```{r}
+mse <- rep(0, 10)
+
+for (i in 1:10) {
+    data <- reg_data
+    data$nspline <- ns(reg_data$age, df = i)
+    age_ns <- train(nox ~ nspline, data = data,
+        method = "lm", trControl = train_control)
+    mse[i] <- age_ns$results$RMSE
+}
+
+age_ns_RMSE <- min(mse)
+
+plot(1:10, mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### 
