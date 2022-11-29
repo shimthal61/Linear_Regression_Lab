@@ -1,5 +1,5 @@
 ---
-title: "Model Selection"
+title: "Variable Selection"
 output:
   html_document:
     theme: flatly
@@ -268,3 +268,47 @@ reg_best <- regsubsets(Salary ~ ., data = hitters, nvmax = 19)
 coef(reg_best, 10)
 ```
 
+## Subset Selection
+
+```{r}
+colnames(reg_data)
+```
+
+```{r}
+# 0 Inputs
+mod_0 <- lm(nox ~ 1, data = reg_data)
+
+# 1 Input
+age_fit <- lm(mpg ~ poly(weight, 4), data = Auto)
+horse_fit <- lm(mpg ~ poly(horsepower, 2), data = Auto)
+cylind_fit <- lm(mpg ~ cylinders, data = Auto)
+which.min(c(deviance(weight_fit), deviance(horse_fit), deviance(cylind_fit)))
+
+# poly(weight, 4) is the winner
+
+# 2 Inputs
+
+weight_horse_fit <- lm(mpg ~ poly(weight, 4) + poly(horsepower, 2), data = Auto)
+weight_cyl_fit <- lm(mpg ~ poly(weight, 4) + cylinders, data = Auto)
+horse_cyl_fit <- lm(mpg ~ poly(horsepower, 2) + cylinders, data = Auto)
+which.min(c(deviance(weight_horse_fit), deviance(weight_cyl_fit), deviance(horse_cyl_fit)))
+
+# poly(weight, 4) + poly(horsepower, 2) is the winner
+
+# 3 Inputs
+
+full_fit <- lm(mpg ~ poly(weight, 4) + poly(horsepower, 2) + cylinders, data = Auto)
+
+# Cross Validation
+Auto$const <- rep(0, dim(Auto)[1])
+
+fit_1 <- train(mpg ~ const, data = Auto, method = "lm", trControl = train_control)
+fit_2 <- train(mpg ~ poly(weight, 4), data = Auto, method = "lm", trControl = train_control)
+fit_3 <- train(mpg ~ poly(weight, 4) + poly(horsepower, 2), data = Auto, method = "lm", trControl = train_control)
+fit_4 <- train(mpg ~ poly(weight, 4) + poly(horsepower, 2) + cylinders, data = Auto, method = "lm", trControl = train_control)
+
+mod_comp <- data.frame(mse = c(fit_1$results$RMSE, fit_2$results$RMSE, fit_3$results$RMSE, fit_4$results$RMSE),
+                      Inputs = c(0, 1, 2, 3))
+
+plot(mod_comp$Inputs, mod_comp$mse, type = "b", xlab = "Number of Input Variables", ylab = "RMSE")
+```

@@ -95,9 +95,6 @@ plot(1:8, mse, type = "b", xlab = "degree")
 
 This produces this plot, which shows us that the smallest RMSE is associated with the 4th-degree polynomial. Let's replot the partial residuals with our polynomial model
 
-```{r}
-plot(Effect("poly(weight, 4)", mod = fit_4, partial.residuals = TRUE))
-```
 
 ## Basis Splines
 
@@ -149,7 +146,7 @@ plot(1:20, mse, type = "b", xlab = "df")
 
 ```{r}
 # 0 Inputs
-mod_0 <- lm(mgp ~ 1, data = Auto)
+mod_0 <- lm(mpg ~ 1, data = Auto)
 
 # 1 Input
 weight_fit <- lm(mpg ~ poly(weight, 4), data = Auto)
@@ -190,3 +187,16 @@ The conclusion is that two inputs of horsepower and weight make the model better
 
 # Classification Models
 
+Again, we'll start somewhere simple - logistic regression for classification. We can then follow the same process of plotting and trying different non-linear transformations if the model needs them. When plotting logistic regression models, you can specify an argument of either `type = "link"` or `type = "response"` in the `plot()` command, from the `effect()` package. This will show either the model fit on the *logic* scale or or the *binary* scale of the data. The *logit* scale is where we assume the response is linear and so `type = "link"` should be used when looking for the possibility of *non-linear* relationships. 
+
+For example, the code below (for an arbitrary splitting of the mpg variable from the Auto data set)
+
+```{r}
+Auto$mpg_bin <- as.factor(Auto$mpg > 23)
+
+fit <- glm(mpg_bin ~ weight + horsepower, data = Auto, family = "binomial")
+
+par(mfrow = c(2, 2))
+plot(effect("weight", mod = fit, partial.residuals = TRUE, type = "reponse"))
+plot(effect("weight", mod = fit, partial.residuals = TRUE, type = "link"))
+```
