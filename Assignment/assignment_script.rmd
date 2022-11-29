@@ -62,62 +62,69 @@ age_lin_RMSE <- age_lin$results$RMSE
 ### Poly Fit
 
 ```{r}
-mse <- rep(0, 8)
+poly_mse <- rep(0, 8)
 
 for (i in 1:8) {
     data <- reg_data
     data$polyfit <- poly(data$age, i)
     poly_age <- train(nox ~ polyfit, data = data,
         method = "lm", trControl = train_control)
-    mse[i] <- poly_age$results$RMSE
+    poly_mse[i] <- poly_age$results$RMSE
 }
 
-age_poly_RMSE <- min(mse)
+age_poly_RMSE <- min(poly_mse)
 
-which.min(mse)
+which.min(poly_mse)
 
-plot(1:8, mse, type = "b", xlab = "Degree")
+plot(1:8, poly_mse, type = "b", xlab = "Degree")
 ```
 
 
 We can see here that a quadratic fit (2-degrees) results in the lowest RMSE. Let's now have a look at other methods.
 
+This is a pretty close fit
+
 ### Basis Splines Fit
 
-```{r}
-mse <- rep(0, 20)
+```{r, warning=FALSE}
+bs_mse <- rep(0, 20)
 
 for (i in 1:20) {
     data <- reg_data
     data$bspline <- bs(reg_data$age, df = i)
     bs_age <- train(nox ~ bspline, data = data,
         method = "lm", trControl = train_control)
-    mse[i] <- bs_age$results$RMSE
+    bs_mse[i] <- bs_age$results$RMSE
 }
 
-age_bs_RMSE <- min(mse)
+age_bs_RMSE <- min(bs_mse)
 
-which.min(mse)
+which.min(bs_mse)
 
-plot(1:20, mse, type = "b", xlab = "Degrees of Freedom")
+plot(1:20, bs_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+```{r}
+bs_age <- lm(nox ~ bs(age, df = 3), data = reg_data)
+plot(effect("age", mod = bs_age, partial.residuals = TRUE))
 ```
 
 ### Natural Splines
 
 ```{r}
-mse <- rep(0, 10)
+ns_mse <- rep(0, 10)
 
 for (i in 1:10) {
     data <- reg_data
     data$nspline <- ns(reg_data$age, df = i)
     age_ns <- train(nox ~ nspline, data = data,
         method = "lm", trControl = train_control)
-    mse[i] <- age_ns$results$RMSE
+    ns_mse[i] <- age_ns$results$RMSE
 }
 
-age_ns_RMSE <- min(mse)
+age_ns_RMSE <- min(ns_mse)
 
-plot(1:10, mse, type = "b", xlab = "Degrees of Freedom")
+plot(1:10, ns_mse, type = "b", xlab = "Degrees of Freedom")
 ```
 
 ### Age Selection
@@ -126,4 +133,398 @@ plot(1:10, mse, type = "b", xlab = "Degrees of Freedom")
 which.min(c(age_lin_RMSE, age_poly_RMSE, age_bs_RMSE, age_ns_RMSE))
 ```
 
-The natural splines results in the lowest RMSE
+```{r}
+age_lin_RMSE
+min(poly_mse)
+min(bs_mse)
+min(ns_mse)
+
+which.min(poly_mse)
+which.min(bs_mse)
+which.min(ns_mse)
+```
+
+The natural splines results in the lowest RMSE. This results from just 2 degrees of freedom, so a parsamonious model.
+
+```{r}
+age_fit <- lm(nox ~ ns(age, 2), data = reg_data)
+plot(effect("age", mod = age_fit, partial.residuals = TRUE))
+```
+
+This looks like a good fit for the data
+
+## Dis
+
+```{r}
+plot(effect("dis", mod = lin_mod, partial.residuals = TRUE))
+```
+
+### Linear fit
+
+```{r}
+dis_lin <- train(nox ~ dis, data = reg_data, method = "lm", trControl = train_control)
+dis_lin_RMSE <- dis_lin$results$RMSE
+```
+
+### Poly Fit
+
+```{r}
+poly_mse <- rep(0, 8)
+
+for (i in 1:8) {
+    data <- reg_data
+    data$polyfit <- poly(data$dis, i)
+    poly_dis <- train(nox ~ polyfit, data = data,
+        method = "lm", trControl = train_control)
+    poly_mse[i] <- poly_dis$results$RMSE
+}
+
+dis_poly_RMSE <- min(poly_mse)
+
+which.min(poly_mse)
+
+plot(1:8, poly_mse, type = "b", xlab = "Degree")
+```
+
+
+We can see here that a quadratic fit (2-degrees) results in the lowest RMSE. Let's now have a look at other methods.
+
+### Basis Splines Fit
+
+```{r}
+bs_mse <- rep(0, 20)
+
+for (i in 1:20) {
+    data <- reg_data
+    data$bspline <- bs(reg_data$dis, df = i)
+    bs_dis <- train(nox ~ bspline, data = data,
+        method = "lm", trControl = train_control)
+    bs_mse[i] <- bs_dis$results$RMSE
+}
+
+dis_bs_RMSE <- min(bs_mse)
+
+which.min(bs_mse)
+
+plot(1:20, bs_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Natural Splines
+
+```{r}
+ns_mse <- rep(0, 10)
+
+for (i in 1:10) {
+    data <- reg_data
+    data$nspline <- ns(reg_data$dis, df = i)
+    dis_ns <- train(nox ~ nspline, data = data,
+        method = "lm", trControl = train_control)
+    ns_mse[i] <- dis_ns$results$RMSE
+}
+
+dis_ns_RMSE <- min(ns_mse)
+
+plot(1:10, ns_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Dis Selection
+
+```{r}
+which.min(c(dis_lin_RMSE, dis_poly_RMSE, dis_bs_RMSE, dis_ns_RMSE))
+```
+
+```{r}
+min(poly_mse)
+min(bs_mse)
+min(ns_mse)
+
+which.min(poly_mse)
+which.min(bs_mse)
+which.min(ns_mse)
+```
+
+All of the outputs have a fairly similar RMSE value, although the `poly(dis, 3)` could probably be considered the simplest. Therefore, we'll stick with that.
+
+```{r}
+dis_fit <- lm(nox ~ poly(dis, 3), data = reg_data)
+plot(effect("dis", mod = dis_fit, partial.residuals = TRUE))
+```
+
+Again, this looks like a decent fit for the data.
+
+## lstat 
+
+```{r}
+plot(effect("lstat", mod = lin_mod, partial.residuals = TRUE))
+```
+
+### Linear fit
+
+```{r}
+lstat_lin <- train(nox ~ lstat, data = reg_data, method = "lm", trControl = train_control)
+lstat_lin_RMSE <- lstat_lin$results$RMSE
+```
+
+### Poly Fit
+
+```{r}
+poly_mse <- rep(0, 8)
+
+for (i in 1:8) {
+    data <- reg_data
+    data$polyfit <- poly(data$lstat, i)
+    poly_lstat <- train(nox ~ polyfit, data = data,
+        method = "lm", trControl = train_control)
+    poly_mse[i] <- poly_lstat$results$RMSE
+}
+
+lstat_poly_RMSE <- min(poly_mse)
+
+which.min(poly_mse)
+
+plot(1:8, poly_mse, type = "b", xlab = "Degree")
+```
+
+
+We can see here that a quadratic fit (2-degrees) results in the lowest RMSE. Let's now have a look at other methods.
+
+### Basis Splines Fit
+
+```{r}
+bs_mse <- rep(0, 20)
+
+for (i in 1:20) {
+    data <- reg_data
+    data$bspline <- bs(reg_data$lstat, df = i)
+    bs_lstat <- train(nox ~ bspline, data = data,
+        method = "lm", trControl = train_control)
+    bs_mse[i] <- bs_lstat$results$RMSE
+}
+
+lstat_bs_RMSE <- min(bs_mse)
+
+which.min(bs_mse)
+
+plot(1:20, bs_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Natural Splines
+
+```{r}
+ns_mse <- rep(0, 10)
+
+for (i in 1:10) {
+    data <- reg_data
+    data$nspline <- ns(reg_data$lstat, df = i)
+    lstat_ns <- train(nox ~ nspline, data = data,
+        method = "lm", trControl = train_control)
+    ns_mse[i] <- lstat_ns$results$RMSE
+}
+
+lstat_ns_RMSE <- min(ns_mse)
+
+plot(1:10, ns_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Lstat Selection
+
+```{r}
+which.min(c(lstat_lin_RMSE, lstat_poly_RMSE, lstat_bs_RMSE, lstat_ns_RMSE))
+```
+
+```{r}
+lstat_lin_RMSE
+min(poly_mse)
+min(bs_mse)
+min(ns_mse)
+
+which.min(poly_mse)
+which.min(bs_mse)
+which.min(ns_mse)
+```
+
+Again, the RMSE's are all very similar, so we'll stick with the simplest fit - `ns(lstat, df = 3)` in this case.
+
+```{r}
+lstat_fit <- lm(nox ~ ns(lstat, df = 3), data = reg_data)
+plot(effect("lstat", mod = lstat_fit, partial.residuals = TRUE))
+```
+
+The partial residuals are all over the place, but this model looks like it captures the data fairly well.
+
+## medv
+
+```{r}
+plot(effect("medv", mod = lin_mod, partial.residuals = TRUE))
+```
+
+### Linear fit
+
+```{r}
+medv_lin <- train(nox ~ medv, data = reg_data, method = "lm", trControl = train_control)
+medv_lin_RMSE <- medv_lin$results$RMSE
+```
+
+### Poly Fit
+
+```{r}
+poly_mse <- rep(0, 8)
+
+for (i in 1:8) {
+    data <- reg_data
+    data$polyfit <- poly(data$medv, i)
+    poly_medv <- train(nox ~ polyfit, data = data,
+        method = "lm", trControl = train_control)
+    poly_mse[i] <- poly_medv$results$RMSE
+}
+
+medv_poly_RMSE <- min(poly_mse)
+
+which.min(poly_mse)
+
+plot(1:8, poly_mse, type = "b", xlab = "Degree")
+```
+
+
+We can see here that a quadratic fit (2-degrees) results in the lowest RMSE. Let's now have a look at other methods.
+
+### Basis Splines Fit
+
+```{r}
+bs_mse <- rep(0, 20)
+
+for (i in 1:20) {
+    data <- reg_data
+    data$bspline <- bs(reg_data$medv, df = i)
+    bs_medv <- train(nox ~ bspline, data = data,
+        method = "lm", trControl = train_control)
+    bs_mse[i] <- bs_medv$results$RMSE
+}
+
+medv_bs_RMSE <- min(bs_mse)
+
+which.min(bs_mse)
+
+plot(1:20, bs_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### Natural Splines
+
+```{r}
+ns_mse <- rep(0, 10)
+
+for (i in 1:10) {
+    data <- reg_data
+    data$nspline <- ns(reg_data$medv, df = i)
+    medv_ns <- train(nox ~ nspline, data = data,
+        method = "lm", trControl = train_control)
+    ns_mse[i] <- medv_ns$results$RMSE
+}
+
+medv_ns_RMSE <- min(ns_mse)
+
+plot(1:10, ns_mse, type = "b", xlab = "Degrees of Freedom")
+```
+
+### medv Selection
+
+```{r}
+which.min(c(medv_lin_RMSE, medv_poly_RMSE, medv_bs_RMSE, medv_ns_RMSE))
+```
+
+```{r}
+lstat_lin_RMSE
+min(poly_mse)
+min(bs_mse)
+min(ns_mse)
+
+which.min(poly_mse)
+which.min(bs_mse)
+which.min(ns_mse)
+```
+
+It appears as though `ns(medv, df = 5)` results in both the lowest RMSE and the simpliest model.
+
+
+```{r}
+medv_fit <- lm(nox ~ ns(medv, df = 5), data = reg_data)
+plot(effect("medv", mod = medv_fit, partial.residuals = TRUE))
+```
+
+## Subset Selection
+
+```{r, warning=FALSE}
+# 0 Inputs
+mod_0 <- lm(nox ~ 1, data = reg_data)
+
+# 1 Input
+age_fit <- lm(nox ~ ns(age, df = 2), data = reg_data)
+dis_fit <- lm(nox ~ poly(dis, 2), data = reg_data)
+lstat_fit <- lm(nox ~ ns(lstat, df = 3), data = reg_data)
+medv_fit <- lm(nox ~ ns(medv, df = 2), data = reg_data)
+which.min(c(deviance(age_fit), deviance(dis_fit), deviance(lstat_fit), deviance(medv_fit)))
+
+# poly(dis, 2) is the winnder
+
+# 2 Inputs
+
+age_dis_fit <- lm(nox ~ ns(age, df = 2) + poly(dis, 2), data = reg_data)
+age_lstat_fit <- lm(nox ~ ns(age, df = 2) + ns(lstat, df = 3), data = reg_data)
+age_medv_fit <- lm(nox ~ ns(age, df = 2) + ns(medv, df = 2), data = reg_data)
+dis_lstat_fit <- lm(nox ~ poly(dis, 2) + ns(lstat, df = 3), data = reg_data)
+dis_medv_fit <- lm(nox ~ poly(dis, 2) + ns(medv, df = 2), data = reg_data)
+lstat_medv_fit <- lm(nox ~ ns(lstat, df = 3) + ns(medv, df = 2), data = reg_data)
+which.min(c(deviance(age_dis_fit), deviance(age_lstat_fit), deviance(age_medv_fit), deviance(dis_lstat_fit), deviance(dis_medv_fit), deviance(lstat_medv_fit)))
+
+# poly(dis, 2) + ns(medv, df = 2) is the winner
+
+# 3 Inputs
+
+age_dis_lstat_fit <- lm(nox ~ ns(age, df = 2) + poly(dis, 2) + ns(lstat, df = 3), data = reg_data)
+age_dis_medv_fit <- lm(nox ~ ns(age, df = 2) + poly(dis, 2) + ns(medv, df = 2), data = reg_data)
+dis_lstat_medv_fit <- lm(nox ~ poly(dis, 2) + ns(lstat, df = 3) + ns(medv, df = 2), data = reg_data)
+which.min(c(deviance(age_dis_lstat_fit), deviance(age_dis_medv_fit), deviance(dis_lstat_medv_fit)))
+
+# ns(age, df = 2) + poly(dis, 2) + ns(medv, df = 2) is the winner
+
+# 4 inputs
+
+full_fit <- lm(nox ~ ns(age, df = 2) + poly(dis, 2) + ns(lstat, df = 3) + ns(medv, df = 2), data = reg_data)
+
+# Cross Validation
+reg_data$const <- rep(0, dim(reg_data)[1])
+
+fit_1 <- train(nox ~ const, data = reg_data, method = "lm", trControl = train_control)
+fit_2 <- train(nox ~ poly(dis, 2), data = reg_data, method = "lm", trControl = train_control)
+fit_3 <- train(nox ~ poly(dis, 2) + ns(medv, df = 2), data = reg_data, method = "lm", trControl = train_control)
+fit_4 <- train(nox ~ ns(age, df = 2) + poly(dis, 2) + ns(medv, df = 2), data = reg_data, method = "lm", trControl = train_control)
+fit_5 <- train(nox ~ ns(age, df = 2) + poly(dis, 2) + ns(lstat, df = 3) + ns(medv, df = 2), data = reg_data, method = "lm", trControl = train_control)
+
+mod_comp <- data.frame(mse = c(fit_1$results$RMSE, fit_2$results$RMSE, fit_3$results$RMSE, fit_4$results$RMSE, fit_5$results$RMSE),
+                      Inputs = c(0, 1, 2, 3, 4))
+
+plot(mod_comp$Inputs, mod_comp$mse, type = "b", xlab = "Number of Input Variables", ylab = "RMSE")
+```
+
+The conclusion is that two inputs of `dis` and `medv` make the model better than each term individually, but adding a third input (`age`) or fourth input (`lstat`) makes no appreciable improvement. In this instance, we would likely only keep the first two inputs, to ensure a parsamonious model. 
+
+So, our final model becomes:
+
+```{r}
+regression_model <- lm(nox ~ poly(dis, 2) + ns(medv, df = 2), data = reg_data)
+summary(regression_model)
+```
+
+Testing to see if our model is any better than a model with no predictors
+
+```{r}
+null_model <- lm(nox ~ 1, data = reg_data)
+anova(full_lin_mod, regression_model)
+```
+
+```{r}
+check_model(regression_model)
+```
+
+# Classification
+
